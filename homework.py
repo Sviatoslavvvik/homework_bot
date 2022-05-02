@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import requests
+from json.decoder import JSONDecodeError
 from http import HTTPStatus
 import logging
 
@@ -39,7 +40,8 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-SOME_DELAY = 10
+SOME_DELAY = 60 * 60 * 24 * 2
+DELAY_FOR_ANSWER = 2
 
 
 def send_message(bot, message):
@@ -47,14 +49,13 @@ def send_message(bot, message):
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logging.info(f'Удачная отправка сообщения "{message}"')
-    except Exception:
+    except telegram.TelegramError:
         logging.exception('сбой при отправке сообщения')
 
 
 def get_api_answer(current_timestamp):
     """Делает запрос к эндпоинту."""
-    timestamp = current_timestamp
-    params = {'from_date': timestamp}
+    params = {'from_date': current_timestamp}
     try:
         homework_statuses = requests.get(
             ENDPOINT,
@@ -63,12 +64,14 @@ def get_api_answer(current_timestamp):
         )
     except ConnectionError:
         logging.error('сбой при доступе к эндпойнту')
+        raise ConnectionError('сбой при доступе к эндпойнту')
+
     if homework_statuses.status_code != HTTPStatus.OK:
         logging.error('сбой при доступе к эндпойнту')
         raise NotCorrectResponse("Код ответа не 200")
     try:
         full_response = homework_statuses.json()
-    except Exception:
+    except JSONDecodeError:
         logging.error('response не преобразуется в json')
     return full_response
 
@@ -145,7 +148,7 @@ def main():
                 )
             except Exception:
                 logging.error('Поле current_date отсутствует')
-                current_timestamp = int(time.time())
+                current_timestamp = int(time.time()) - DELAY_FOR_ANSWER
 
             time.sleep(RETRY_TIME)
 
