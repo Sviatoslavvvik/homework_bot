@@ -73,6 +73,7 @@ def get_api_answer(current_timestamp):
         full_response = homework_statuses.json()
     except JSONDecodeError:
         logging.error('response не преобразуется в json')
+        raise JSONDecodeError('response не преобразуется в json')
     return full_response
 
 
@@ -150,13 +151,17 @@ def main():
                 logging.error('Поле current_date отсутствует')
                 current_timestamp = int(time.time()) - DELAY_FOR_ANSWER
 
-            time.sleep(RETRY_TIME)
-
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             if previous_error != error:
                 send_message(bot, message)
                 previous_error = error
+
+        else:
+            pass
+
+        finally:
+            time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
