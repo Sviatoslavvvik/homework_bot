@@ -157,9 +157,6 @@ def main():
                 send_message(bot, message)
                 previous_error = error
 
-        else:
-            pass
-
         finally:
             time.sleep(RETRY_TIME)
 
